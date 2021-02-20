@@ -4,6 +4,7 @@ import subprocess
 import requests
 import os
 
+BASE_PATH = R'C:\\Users\\Yaron Shamul\\Desktop\\apple music\\songs\\'
 
 class Song():
 	def __init__(self, name, artist, album):
@@ -12,7 +13,32 @@ class Song():
 		self.album = album
 
 	def __repr__(self):
-		return f'{self.name} | {self.artist} | {self.album}'
+		return f'{self.name} {self.artist} {self.album}'
+
+	'''
+	will search for the song in youtube and return
+	the link for the first song
+	'''
+	def get_song_yt_url(self):
+		print(f'# Working on: {self}')
+		URL_TEMPLATE = f'https://www.youtube.com/results?search_query={self}'
+		
+		r = requests.get(URL_TEMPLATE)
+		results = r.text.find('watch?v=')
+
+		watch_link = r.text[results : results + 19]
+		print('# Song url found...')
+		return f'https://www.youtube.com/{watch_link}'
+
+	
+	def download_song_by_url(self, url):
+		print(f'# Start Downloading {self.name}...')
+		yt = YouTube(url) 
+		stream = yt.streams.filter(only_audio=True).first()
+
+		path = 'BASE_PATH' + str({self.name})[2:-2]
+		stream.download(path)
+		print();print();print()
 
 
 '''
@@ -28,37 +54,22 @@ def data_parser():
 
 	return songs
 
-
 '''
-will search for the song in youtube and return
-the link for the first song
+The fllow is basically to firstly take the parsed data and
+than to iterate every song
 '''
-def yt_url_by_name(song):
-
-	URL_TEMPLATE = f'https://www.youtube.com/results?search_query={song}'.replace('|', '')
-	
-	r = requests.get(URL_TEMPLATE)
-	results = r.text.find('watch?v=')
-
-	watch_link = r.text[results : results + 19]
-	print('# Song url found...')
-	return f'https://www.youtube.com/{watch_link}'
-	
-
-def download_by_url(song, url):
-	print(f'# Start Downloading {song.name}...')
-	yt = YouTube(url) 
-	stream = yt.streams.filter(only_audio=True).first()
-
-	path = 'C:\\Users\\Yaron Shamul\\Desktop\\apple music\\songs\\' + str({song.name})[2:-2]
-	stream.download(path)
-	print();print();print()
-	
-
+def fllow():
+	for song in data_parser():
+		try:
+			song.download_song_by_url(song.get_song_yt_url())
+		except Exception as e: 
+			# maybe a good idea is to print this log into a file and make some report
+			print(f'# Error while trying to work on: {song.name} \n Error: {e}')
+			continue
 
 
 if __name__ == '__main__':
-	for song in data_parser():
-		download_by_url(song, yt_url_by_name(song))
-		
-	#yt_url_by_name()
+	fllow()
+	
+
+
